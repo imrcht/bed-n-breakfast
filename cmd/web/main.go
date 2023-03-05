@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/alexedwards/scs/v2"
-	"github.com/imrcht/bed-n-breakfast/pkg/config"
-	"github.com/imrcht/bed-n-breakfast/pkg/handlers"
-	"github.com/imrcht/bed-n-breakfast/pkg/render"
+	"github.com/imrcht/bed-n-breakfast/internals/config"
+	"github.com/imrcht/bed-n-breakfast/internals/handlers"
+	"github.com/imrcht/bed-n-breakfast/internals/render"
 )
 
 const portNumber = ":7000"

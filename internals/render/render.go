@@ -7,8 +7,9 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/imrcht/bed-n-breakfast/pkg/config"
-	"github.com/imrcht/bed-n-breakfast/pkg/models"
+	"github.com/imrcht/bed-n-breakfast/internals/config"
+	"github.com/imrcht/bed-n-breakfast/internals/models"
+	"github.com/justinas/nosurf"
 )
 
 var App *config.AppConfig
@@ -18,11 +19,12 @@ func SetApp(a *config.AppConfig) {
 }
 
 // DefaultTempData
-func defaultTempData(td *models.TemplateData) *models.TemplateData {
+func defaultTempData(td *models.TemplateData, r *http.Request) *models.TemplateData {
+	td.CSRFToken = nosurf.Token(r)
 	return td
 }
 
-func RenderHtml(w http.ResponseWriter, temp string, td *models.TemplateData) {
+func RenderHtml(w http.ResponseWriter, r *http.Request, temp string, td *models.TemplateData) {
 
 	var tc map[string]*template.Template
 
@@ -47,7 +49,7 @@ func RenderHtml(w http.ResponseWriter, temp string, td *models.TemplateData) {
 
 	buf := new(bytes.Buffer)
 
-	td = defaultTempData(td)
+	td = defaultTempData(td, r)
 
 	err := t.Execute(buf, td)
 	if err != nil {
