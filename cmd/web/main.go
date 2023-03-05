@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/gob"
 	"log"
 	"net/http"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/imrcht/bed-n-breakfast/internals/config"
 	"github.com/imrcht/bed-n-breakfast/internals/handlers"
+	"github.com/imrcht/bed-n-breakfast/internals/models"
 	"github.com/imrcht/bed-n-breakfast/internals/render"
 )
 
@@ -17,6 +19,9 @@ var app config.AppConfig
 var session *scs.SessionManager
 
 func main() {
+	// Adding custom var type to session
+	gob.Register(models.Reservation{})
+
 	// change this to true when in production
 	app.InProduction = false
 

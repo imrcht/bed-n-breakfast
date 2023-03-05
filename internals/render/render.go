@@ -20,6 +20,9 @@ func SetApp(a *config.AppConfig) {
 
 // DefaultTempData
 func defaultTempData(td *models.TemplateData, r *http.Request) *models.TemplateData {
+	td.Flash = App.Session.PopString(r.Context(), "flash")
+	td.Error = App.Session.PopString(r.Context(), "error")
+	td.Warning = App.Session.PopString(r.Context(), "warning")
 	td.CSRFToken = nosurf.Token(r)
 	return td
 }
