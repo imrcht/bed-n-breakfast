@@ -9,18 +9,20 @@ import (
 	"github.com/imrcht/bed-n-breakfast/internals/handlers"
 )
 
+// * Routes returns mux router
 func routes(app *config.AppConfig) http.Handler {
-	// Using pat for routing
-	// mux := pat.New()
+	// * Using pat for routing
+	/*mux := pat.New()
 
-	// mux.Get("/", http.HandlerFunc(handlers.Repo.Home))
-	// mux.Get("/about", http.HandlerFunc(handlers.Repo.About))
+	mux.Get("/", http.HandlerFunc(handlers.Repo.Home))
+	mux.Get("/about", http.HandlerFunc(handlers.Repo.About))*/
 
-	// Using chi for routing
+	// * Using chi for routing
 	mux := chi.NewMux()
 
-	// Using recoverer middleware comes along with chi
+	// * Using recoverer middleware comes along with chi
 	mux.Use(middleware.Recoverer)
+	mux.Use(WriteToConsole)
 	mux.Use(NoSurf)
 	mux.Use(SessionLoad)
 

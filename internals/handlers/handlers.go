@@ -32,9 +32,10 @@ func NewRepo(r *Repository) {
 	Repo = r
 }
 
+// * Receivers: Structs with functions
 func (m *Repository) Home(w http.ResponseWriter, r *http.Request) {
 
-	// Fetching remote address from request and storing it in session
+	// * Fetching remote address from request and storing it in session
 	remoteIp := r.RemoteAddr
 	m.App.Session.Put(r.Context(), "remote_ip", remoteIp)
 
@@ -42,10 +43,11 @@ func (m *Repository) Home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Repository) About(w http.ResponseWriter, r *http.Request) {
+	// * `{}` represents empty data for any type and can be used to prepopulate data
 	mapString := map[string]string{}
 	mapString["test"] = "Hello again"
 
-	// Fetching remoteIp from session which was stored in home page , return -> string (empty string if there's no value present for that key)
+	// * Fetching remoteIp from session which was stored in home page , return -> string (empty string if there's no value present for that key)
 	remoteIp := m.App.Session.GetString(r.Context(), "remote_ip")
 
 	mapString["remote_ip"] = remoteIp
@@ -71,6 +73,7 @@ type jsonResponse struct {
 	Message string `json:"message"`
 }
 
+// * AvailabilityJSON handles request for availability and send response in json format
 func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 	respStruct := jsonResponse{
 		Ok:      true,
@@ -102,6 +105,7 @@ func (m *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
 	// sendForm := forms.Form{}
 	emptyReservation := models.Reservation{}
 
+	// * interface is a type that can hold any type of data where `{}` represents empty data for any type
 	data := make(map[string]interface{})
 	data["reservation"] = emptyReservation
 

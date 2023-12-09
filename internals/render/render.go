@@ -32,18 +32,19 @@ func RenderHtml(w http.ResponseWriter, r *http.Request, temp string, td *models.
 	var tc map[string]*template.Template
 
 	if App.UseCache {
-		// get the template cache from app config
+		// * Get the template cache from app config
 		tc = App.TemplateCache
 	} else {
 
-		// Create template cache and store
-		tc, _ = CreateTemplateCache()
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
+		// * Create template cache and store
+		newTc, errInCreatingTc := CreateTemplateCache()
+		if errInCreatingTc != nil {
+			log.Fatal(errInCreatingTc)
+		}
+		tc = newTc
 	}
 
-	// get requested template from cache
+	// * Get requested template from cache
 	t, ok := tc[temp]
 
 	if !ok {
@@ -59,26 +60,27 @@ func RenderHtml(w http.ResponseWriter, r *http.Request, temp string, td *models.
 		log.Println(err)
 	}
 
-	// render
+	// * Render template to response writer
 	_, err = buf.WriteTo(w)
 	if err != nil {
 		log.Println(err)
 	}
 
-	// parsedFile, _ := template.ParseFiles("./templates/"+temp, "./templates/base.layout.tmpl")
+	// * Old approach
+	/* parsedFile, _ := template.ParseFiles("./templates/"+temp, "./templates/base.layout.tmpl")
+	err := parsedFile.Execute(w, nil)
 
-	// err := parsedFile.Execute(w, nil)
-
-	// if err != nil {
-	// 	fmt.Fprint(w, "Error parsing teamplate", err)
-	// 	return
-	// }
+	if err != nil {
+		fmt.Fprint(w, "Error parsing template", err)
+		return
+	}
+	*/
 }
 
 func CreateTemplateCache() (map[string]*template.Template, error) {
 	myCache := map[string]*template.Template{}
 
-	// get all pages of templates starting with *.page.tmpl;
+	// * Get all pages of templates starting with *.page.tmpl;
 	pages, err := filepath.Glob("./templates/*.page.tmpl")
 
 	if err != nil {

@@ -13,16 +13,18 @@ import (
 	"github.com/imrcht/bed-n-breakfast/internals/render"
 )
 
-const portNumber = ":7000"
+const portNumber = ":8000"
+
+// @start command for multiple go files: go run cmd/web/*.go
 
 var app config.AppConfig
 var session *scs.SessionManager
 
 func main() {
-	// Adding custom var type to session
+	// * Adding custom var type to session
 	gob.Register(models.Reservation{})
 
-	// change this to true when in production
+	// * Change this to true when in production
 	app.InProduction = false
 
 	session = scs.New()
@@ -50,7 +52,7 @@ func main() {
 	// http.HandleFunc("/", handlers.Repo.Home)
 	// http.HandleFunc("/about", handlers.Repo.About)
 
-	log.Println("Server listening on port: 7000")
+	log.Printf("Server listening on port: %s", portNumber)
 
 	// We can use http.Server instance to run
 	srv := &http.Server{
