@@ -22,7 +22,6 @@ func routes(app *config.AppConfig) http.Handler {
 
 	// * Using recoverer middleware comes along with chi
 	mux.Use(middleware.Recoverer)
-	mux.Use(WriteToConsole)
 	mux.Use(NoSurf)
 	mux.Use(SessionLoad)
 

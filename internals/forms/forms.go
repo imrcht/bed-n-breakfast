@@ -9,13 +9,13 @@ import (
 	"github.com/asaskevich/govalidator"
 )
 
-// Form creates a custom form struct, embeds a url.Values object
+// Form: creates a custom form struct, embeds a url.Values object
 type Form struct {
 	url.Values
 	Errors errors
 }
 
-// New creates and returns a new Form type object
+// New: creates and returns a new Form type object
 func New(data url.Values) *Form {
 	return &Form{
 		data,
@@ -23,7 +23,7 @@ func New(data url.Values) *Form {
 	}
 }
 
-// Has checks whether this request has particular field or not
+// Has: checks whether this request has particular field or not
 func (f *Form) Has(field string, r *http.Request) bool {
 	x := r.Form.Get(field)
 
@@ -35,7 +35,7 @@ func (f *Form) Has(field string, r *http.Request) bool {
 	return false
 }
 
-// Required does the same as HasMany but in an efficient manner
+// Required: does the same as HasMany but in an efficient manner
 func (f *Form) Required(fields ...string) {
 	for _, field := range fields {
 		isPresent := f.Get(field)
@@ -78,6 +78,30 @@ func (f *Form) IsValidEmail(field string, r *http.Request) bool {
 
 	if x != "" && !govalidator.IsEmail(x) {
 		f.Errors.Add(field, "This is not a valid email")
+		return false
+	} else if x == "" {
+		f.Errors.Add(field, "This is an empty field")
+		return false
+	}
+	return true
+}
+
+func (f *Form) IsValidPhone(field string, r *http.Request) bool {
+	x := r.Form.Get(field)
+
+	validPhoneNumber := true
+
+	for _, v := range x {
+		// * Checking if the phone number contains only numbers and '+' sign (for country code)
+		// * ASCII(0-9): 48-57
+		if v != '+' && (int(v) < 48 || int(v) > 57) {
+			validPhoneNumber = false
+			break
+		}
+	}
+
+	if x != "" && !validPhoneNumber && len(x) < 6 {
+		f.Errors.Add(field, "This is not a valid phone")
 		return false
 	} else if x == "" {
 		f.Errors.Add(field, "This is an empty field")

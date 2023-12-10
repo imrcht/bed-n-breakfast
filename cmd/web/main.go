@@ -4,11 +4,13 @@ import (
 	"encoding/gob"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/imrcht/bed-n-breakfast/internals/config"
 	"github.com/imrcht/bed-n-breakfast/internals/handlers"
+	"github.com/imrcht/bed-n-breakfast/internals/helpers"
 	"github.com/imrcht/bed-n-breakfast/internals/models"
 	"github.com/imrcht/bed-n-breakfast/internals/render"
 )
@@ -19,35 +21,15 @@ const portNumber = ":8000"
 
 var app config.AppConfig
 var session *scs.SessionManager
+var infoLog *log.Logger
+var errorLog *log.Logger
 
 func main() {
-	// * Adding custom var type to session
-	gob.Register(models.Reservation{})
 
-	// * Change this to true when in production
-	app.InProduction = false
-
-	session = scs.New()
-	session.Lifetime = 24 * time.Hour
-	session.Cookie.Persist = true
-	session.Cookie.SameSite = http.SameSiteLaxMode
-	session.Cookie.Secure = app.InProduction
-
-	app.Session = session
-
-	tc, err := render.CreateTemplateCache()
-
+	err := run()
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	app.TemplateCache = tc
-	app.UseCache = false
-
-	render.SetApp(&app)
-
-	repo := handlers.NewHandler(app)
-	handlers.NewRepo(repo)
 
 	// http.HandleFunc("/", handlers.Repo.Home)
 	// http.HandleFunc("/about", handlers.Repo.About)
@@ -66,4 +48,44 @@ func main() {
 
 	// Or we can use directly ListenAndServer function to listen
 	// _ = http.ListenAndServe(portNumber, routes(&app))
+}
+
+func run() error {
+	// * Adding custom var type to session
+	gob.Register(models.Reservation{})
+
+	infoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+	errorLog = log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+
+	// * Change this to true when in production
+	app.InProduction = false
+
+	session = scs.New()
+	session.Lifetime = 24 * time.Hour
+	session.Cookie.Persist = true
+	session.Cookie.SameSite = http.SameSiteLaxMode
+	session.Cookie.Secure = app.InProduction
+
+	app.Session = session
+
+	tc, err := render.CreateTemplateCache()
+
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	app.TemplateCache = tc
+	app.UseCache = false
+	app.InfoLog = infoLog
+	app.ErrorLog = errorLog
+
+	render.SetApp(&app)
+
+	repo := handlers.NewHandler(app)
+	handlers.NewRepo(repo)
+
+	helpers.NewHelpers(&app)
+
+	return nil
 }

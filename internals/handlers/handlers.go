@@ -3,11 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/imrcht/bed-n-breakfast/internals/config"
 	"github.com/imrcht/bed-n-breakfast/internals/forms"
+	"github.com/imrcht/bed-n-breakfast/internals/helpers"
 	"github.com/imrcht/bed-n-breakfast/internals/models"
 	"github.com/imrcht/bed-n-breakfast/internals/render"
 )
@@ -83,7 +83,8 @@ func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 	respJson, err := json.MarshalIndent(respStruct, "", "  ")
 
 	if err != nil {
-		log.Println("Error: ", err)
+		helpers.ServerError(w, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -117,9 +118,8 @@ func (m *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
 
 func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
-
 	if err != nil {
-		log.Println("Error while parsing form data: ", err)
+		helpers.ServerError(w, err)
 		return
 	}
 
@@ -140,6 +140,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	form.Required("first_name", "last_name", "email", "phone")
 	form.MinLength("first_name", 4, r)
 	form.IsValidEmail("email", r)
+	form.IsValidPhone("phone", r)
 
 	if !form.Valid() {
 		data := make(map[string]interface{})
@@ -162,7 +163,7 @@ func (m *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) 
 	reservation, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation)
 
 	if !ok {
-		log.Println("reservation not found in session")
+		m.App.ErrorLog.Println("Reservation not found in session")
 		m.App.Session.Put(r.Context(), "flash", "Reservation not found ")
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
