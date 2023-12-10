@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	"github.com/imrcht/bed-n-breakfast/internals/config"
+	"github.com/imrcht/bed-n-breakfast/internals/helpers"
 	"github.com/imrcht/bed-n-breakfast/internals/models"
 	"github.com/justinas/nosurf"
 )
@@ -39,7 +40,8 @@ func RenderHtml(w http.ResponseWriter, r *http.Request, temp string, td *models.
 		// * Create template cache and store
 		newTc, errInCreatingTc := CreateTemplateCache()
 		if errInCreatingTc != nil {
-			log.Fatal(errInCreatingTc)
+			helpers.ServerError(w, errInCreatingTc)
+			return
 		}
 		tc = newTc
 	}
