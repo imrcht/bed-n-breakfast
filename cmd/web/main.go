@@ -9,6 +9,7 @@ import (
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/imrcht/bed-n-breakfast/internals/config"
+	"github.com/imrcht/bed-n-breakfast/internals/driver"
 	"github.com/imrcht/bed-n-breakfast/internals/handlers"
 	"github.com/imrcht/bed-n-breakfast/internals/helpers"
 	"github.com/imrcht/bed-n-breakfast/internals/models"
@@ -26,10 +27,12 @@ var errorLog *log.Logger
 
 func main() {
 
-	err := run()
+	db, err := run()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	defer db.SQL.Close()
 
 	// http.HandleFunc("/", handlers.Repo.Home)
 	// http.HandleFunc("/about", handlers.Repo.About)
@@ -50,7 +53,7 @@ func main() {
 	// _ = http.ListenAndServe(portNumber, routes(&app))
 }
 
-func run() error {
+func run() (*driver.DB, error) {
 	// * Adding custom var type to session
 	gob.Register(models.Reservation{})
 
@@ -68,11 +71,22 @@ func run() error {
 
 	app.Session = session
 
+	// * Connect to database
+	dsn := `host=localhost port=5432 dbname=bookings user=rachitgupta password=`
+	db, err := driver.ConnectSql(dsn)
+
+	if err != nil {
+		log.Fatal("Cannot connect to database! Dying...")
+		return db, err
+	}
+
+	log.Println("Connected to database!")
+
 	tc, err := render.CreateTemplateCache()
 
 	if err != nil {
 		log.Fatal(err)
-		return err
+		return db, err
 	}
 
 	app.TemplateCache = tc
@@ -80,12 +94,10 @@ func run() error {
 	app.InfoLog = infoLog
 	app.ErrorLog = errorLog
 
-	render.SetApp(&app)
-
-	repo := handlers.NewHandler(app)
+	repo := handlers.NewHandler(&app, db)
 	handlers.NewRepo(repo)
-
+	render.SetApp(&app)
 	helpers.NewHelpers(&app)
 
-	return nil
+	return db, nil
 }

@@ -6,24 +6,29 @@ import (
 	"net/http"
 
 	"github.com/imrcht/bed-n-breakfast/internals/config"
+	"github.com/imrcht/bed-n-breakfast/internals/driver"
 	"github.com/imrcht/bed-n-breakfast/internals/forms"
 	"github.com/imrcht/bed-n-breakfast/internals/helpers"
 	"github.com/imrcht/bed-n-breakfast/internals/models"
 	"github.com/imrcht/bed-n-breakfast/internals/render"
+	"github.com/imrcht/bed-n-breakfast/internals/repository"
+	"github.com/imrcht/bed-n-breakfast/internals/repository/dbrepo"
 )
 
 // Repository
 type Repository struct {
-	App config.AppConfig
+	App *config.AppConfig
+	DB  repository.DatabaseRepo
 }
 
 // Repo
 var Repo *Repository
 
 // NewHandler
-func NewHandler(a config.AppConfig) *Repository {
+func NewHandler(a *config.AppConfig, db *driver.DB) *Repository {
 	return &Repository{
 		App: a,
+		DB:  dbrepo.NewPostgressDBRepo(a, db.SQL),
 	}
 }
 
