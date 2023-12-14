@@ -4,15 +4,8 @@ import (
 	"time"
 )
 
-type Reservation struct {
-	FirstName string
-	LastName  string
-	Email     string
-	Phone     string
-}
-
 // Users: is the user model
-type Users struct {
+type User struct {
 	ID          int
 	FirstName   string
 	LastName    string
@@ -24,7 +17,7 @@ type Users struct {
 }
 
 // Rooms: is the room model
-type Rooms struct {
+type Room struct {
 	ID        int
 	RoomName  string
 	CreatedAt time.Time
@@ -32,14 +25,14 @@ type Rooms struct {
 }
 
 // Restrictions: is the restriction model
-type Restrictions struct {
+type Restriction struct {
 	ID              int
 	RestrictionName string
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }
 
-type Reservations struct {
+type Reservation struct {
 	ID        int
 	FirstName string
 	LastName  string
@@ -48,22 +41,22 @@ type Reservations struct {
 	StartDate time.Time
 	EndDate   time.Time
 	RoomId    int
-	Room      Rooms
+	Room      Room
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
 // RoomRestrictions: is the reservation model
-type RoomRestrictions struct {
+type RoomRestriction struct {
 	ID            int
 	StartDate     time.Time
 	EndDate       time.Time
 	ReservationId int
-	Reservation   Reservations
+	Reservation   Reservation
 	RoomID        int
-	Room          Rooms
+	Room          Room
 	RestrictionID int
-	Restriction   Restrictions
+	Restriction   Restriction
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }

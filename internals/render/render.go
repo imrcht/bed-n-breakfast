@@ -15,7 +15,7 @@ import (
 
 var App *config.AppConfig
 
-func SetApp(a *config.AppConfig) {
+func NewRenderer(a *config.AppConfig) {
 	App = a
 }
 
@@ -28,7 +28,7 @@ func defaultTempData(td *models.TemplateData, r *http.Request) *models.TemplateD
 	return td
 }
 
-func RenderHtml(w http.ResponseWriter, r *http.Request, temp string, td *models.TemplateData) {
+func Template(w http.ResponseWriter, r *http.Request, temp string, td *models.TemplateData) {
 
 	var tc map[string]*template.Template
 

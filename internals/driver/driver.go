@@ -13,6 +13,8 @@ type DB struct {
 	SQL *sql.DB
 }
 
+// * One of the popular ORM for Go is upperDb/upper.io
+
 func ConnectSql(dsn string) (*DB, error) {
 	d, err := NewDbConnection(dsn)
 

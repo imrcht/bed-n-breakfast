@@ -56,6 +56,9 @@ func main() {
 func run() (*driver.DB, error) {
 	// * Adding custom var type to session
 	gob.Register(models.Reservation{})
+	gob.Register(models.User{})
+	gob.Register(models.Room{})
+	gob.Register(models.Restriction{})
 
 	infoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog = log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
@@ -96,7 +99,7 @@ func run() (*driver.DB, error) {
 
 	repo := handlers.NewHandler(&app, db)
 	handlers.NewRepo(repo)
-	render.SetApp(&app)
+	render.NewRenderer(&app)
 	helpers.NewHelpers(&app)
 
 	return db, nil
