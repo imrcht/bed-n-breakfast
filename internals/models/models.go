@@ -41,9 +41,9 @@ type Reservation struct {
 	StartDate time.Time
 	EndDate   time.Time
 	RoomId    int
-	Room      Room
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	Room      Room
 }
 
 // RoomRestrictions: is the reservation model
@@ -52,11 +52,11 @@ type RoomRestriction struct {
 	StartDate     time.Time
 	EndDate       time.Time
 	ReservationId int
-	Reservation   Reservation
 	RoomID        int
-	Room          Room
 	RestrictionID int
-	Restriction   Restriction
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
+	Reservation   Reservation
+	Room          Room
+	Restriction   Restriction
 }
