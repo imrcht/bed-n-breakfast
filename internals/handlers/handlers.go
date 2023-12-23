@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"html"
 	"net/http"
 	"strconv"
 	"time"
@@ -383,6 +384,33 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		helpers.ServerError(w, err)
 		return
 	}
+
+	// * Send notification to guest
+	htmlMsg := `
+		<strong>Reservation Confirmation</strong><br>
+		Dear ` + html.EscapeString(reservation.FirstName) + `, <br>
+		This is to confirm your reservation from ` + reservation.StartDate.Format("2006-01-02") + ` to ` + reservation.EndDate.Format("2006-01-02") + `.
+	`
+	msg := models.MailData{
+		To:      reservation.Email,
+		From:    "Bed N'Breakfast <no-reply@bnb.com>",
+		Subject: "Reservation Confirmation",
+		Content: htmlMsg,
+	}
+	m.App.MailChan <- msg
+
+	// * Send notification to property owner
+	htmlMsg = `
+		<strong>Reservation Notification</strong><br>
+		A reservation has been made for ` + reservation.FirstName + ` ` + reservation.LastName + ` from ` + reservation.StartDate.Format("2006-01-02") + ` to ` + reservation.EndDate.Format("2006-01-02") + `.
+	`
+	msg = models.MailData{
+		To:      "propertyowner@bnb.com",
+		From:    "Bed N'Breakfast <no-reply@bnb.com>",
+		Subject: "Reservation Notification",
+		Content: htmlMsg,
+	}
+	m.App.MailChan <- msg
 
 	m.App.Session.Put(r.Context(), "reservation", reservation)
 	http.Redirect(w, r, "/reservation-summary", http.StatusSeeOther)

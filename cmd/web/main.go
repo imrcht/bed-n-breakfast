@@ -33,11 +33,16 @@ func main() {
 	}
 
 	defer db.SQL.Close()
+	defer close(app.MailChan)
+
+	// * Listen for mail channel
+	app.InfoLog.Println("Starting mail listener...")
+	listenForMailChan()
 
 	// http.HandleFunc("/", handlers.Repo.Home)
 	// http.HandleFunc("/about", handlers.Repo.About)
 
-	log.Printf("Server listening on port: %s", portNumber)
+	app.InfoLog.Printf("Server listening on port: %s", portNumber)
 
 	// We can use http.Server instance to run
 	srv := &http.Server{
@@ -60,8 +65,12 @@ func run() (*driver.DB, error) {
 	gob.Register(models.Room{})
 	gob.Register(models.Restriction{})
 
-	infoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
-	errorLog = log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+	// * Creating channel for sending mail data
+	mailChan := make(chan models.MailData)
+	app.MailChan = mailChan
+
+	infoLog = log.New(os.Stdout, "INFO:\t", log.Ldate|log.Ltime)
+	errorLog = log.New(os.Stdout, "ERROR:\t", log.Ldate|log.Ltime|log.Lshortfile)
 
 	// * Change this to true when in production
 	app.InProduction = false
@@ -83,7 +92,7 @@ func run() (*driver.DB, error) {
 		return db, err
 	}
 
-	log.Println("Connected to database!")
+	infoLog.Println("Connected to database!")
 
 	tc, err := render.CreateTemplateCache()
 

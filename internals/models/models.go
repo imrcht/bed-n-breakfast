@@ -60,3 +60,11 @@ type RoomRestriction struct {
 	Room          Room
 	Restriction   Restriction
 }
+
+// MailData: is the mail data model
+type MailData struct {
+	To      string
+	From    string
+	Subject string
+	Content string
+}
