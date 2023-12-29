@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"html"
+	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -17,6 +19,7 @@ import (
 	"github.com/imrcht/bed-n-breakfast/internals/render"
 	"github.com/imrcht/bed-n-breakfast/internals/repository"
 	"github.com/imrcht/bed-n-breakfast/internals/repository/dbrepo"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Repository
@@ -439,4 +442,140 @@ func (m *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) 
 		Data:      data,
 		StringMap: stringMap,
 	})
+}
+
+// ShowLogin: renders login page
+func (m *Repository) ShowLogin(w http.ResponseWriter, r *http.Request) {
+	render.Template(w, r, "login.page.tmpl", &models.TemplateData{
+		Form: forms.New(nil),
+	})
+}
+
+// PostShowLogin: takes login details from form, validates form, authenticate user and redirects to dashboard page
+func (m *Repository) PostShowLogin(w http.ResponseWriter, r *http.Request) {
+	// * Renew the session token
+	_ = m.App.Session.RenewToken(r.Context())
+
+	err := r.ParseForm()
+	if err != nil {
+		m.App.ErrorLog.Println(err)
+	}
+
+	form := forms.New(r.PostForm)
+	form.Required("email", "password")
+	form.IsValidEmail("email", r)
+
+	email := r.Form.Get("email")
+	password := r.Form.Get("password")
+
+	if !form.Valid() {
+		m.App.ErrorLog.Println("Invalid form details")
+		render.Template(w, r, "login.page.tmpl", &models.TemplateData{
+			Form: form,
+			StringMap: map[string]string{
+				"email":    email,
+				"password": password,
+			},
+		})
+		return
+	}
+
+	// * Authenticate user
+	user, _, err := m.DB.Authenticate(email, password)
+	if err != nil {
+		m.App.Session.Put(r.Context(), "error", "Invalid login details")
+		m.App.ErrorLog.Println("Invalid login details")
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		return
+	}
+
+	m.App.Session.Put(r.Context(), "user", user)
+	m.App.Session.Put(r.Context(), "flash", "Login successful")
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+type jsonResponseSignup struct {
+	Ok      bool        `json:"ok"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
+	Error   error       `json:"error"`
+}
+
+func (m *Repository) PostSignUpJson(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		m.App.ErrorLog.Println(err)
+		helpers.ServerError(w, err)
+	}
+
+	type UserBody struct {
+		FirstName       string `json:"first_name"`
+		LastName        string `json:"last_name"`
+		Email           string `json:"email"`
+		Password        string `json:"password"`
+		ConfirmPassword string `json:"confirm_password"`
+	}
+	reqBody, _ := io.ReadAll(r.Body)
+
+	var userBody UserBody
+	err = json.Unmarshal(reqBody, &userBody)
+	if err != nil {
+		m.App.ErrorLog.Println(err)
+		helpers.ServerError(w, err)
+	}
+	log.Println(userBody.Email)
+
+	// TODO: Validate userBody
+	if userBody.Password != userBody.ConfirmPassword {
+		m.App.ErrorLog.Println("Password and confirm password does not match")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(jsonResponseSignup{
+			Ok:      false,
+			Message: "Password and confirm password does not match",
+			Error:   errors.New("password and confirm password does not match"),
+		})
+		return
+	}
+
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(userBody.Password), 12)
+	user := models.User{
+		FirstName:   userBody.FirstName,
+		LastName:    userBody.LastName,
+		Email:       userBody.Email,
+		Password:    string(hashedPassword),
+		AccessLevel: 2,
+	}
+
+	user, err = m.DB.InsertUser(user)
+	if err != nil {
+		m.App.ErrorLog.Println(err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(jsonResponseSignup{
+			Ok:      false,
+			Message: "Internal server error during inserting user",
+			Error:   err,
+		})
+		return
+	}
+
+	user.Password = " "
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(jsonResponseSignup{
+		Ok:      true,
+		Message: "User created successfully",
+		Data:    user,
+	})
+}
+
+func (m *Repository) Logout(w http.ResponseWriter, r *http.Request) {
+	_ = m.App.Session.Destroy(r.Context())
+	_ = m.App.Session.RenewToken(r.Context())
+	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+}
+
+func (m *Repository) AdminDashboard(w http.ResponseWriter, r *http.Request) {
+	render.Template(w, r, "admin-dashboard.page.tmpl", &models.TemplateData{})
 }

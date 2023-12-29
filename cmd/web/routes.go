@@ -22,7 +22,7 @@ func routes(app *config.AppConfig) http.Handler {
 
 	// * Using recoverer middleware comes along with chi
 	mux.Use(middleware.Recoverer)
-	mux.Use(NoSurf)
+	// mux.Use(NoSurf)
 	mux.Use(SessionLoad)
 
 	mux.Get("/", handlers.Repo.Home)
@@ -41,6 +41,17 @@ func routes(app *config.AppConfig) http.Handler {
 	mux.Get("/make-reservation", handlers.Repo.Reservation)
 	mux.Post("/make-reservation", handlers.Repo.PostReservation)
 	mux.Get("/reservation-summary", handlers.Repo.ReservationSummary)
+
+	mux.Get("/user/login", handlers.Repo.ShowLogin)
+	mux.Post("/user/login", handlers.Repo.PostShowLogin)
+	mux.Post("/user/register", handlers.Repo.PostSignUpJson)
+	mux.Get("/user/logout", handlers.Repo.Logout)
+
+	mux.Route("/admin", func(r chi.Router) {
+		// * Using middleware to check if user is authenticated
+		r.Use(Auth)
+		r.Get("/dashboard", handlers.Repo.AdminDashboard)
+	})
 
 	// Using static folder
 	fileServer := http.FileServer(http.Dir("./static"))

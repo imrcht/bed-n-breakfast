@@ -16,7 +16,7 @@ import (
 	"github.com/imrcht/bed-n-breakfast/internals/render"
 )
 
-const portNumber = ":8000"
+const portNumber = ":8080"
 
 // @start command for multiple go files: go run cmd/web/*.go
 

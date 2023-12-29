@@ -2,9 +2,11 @@ package dbrepo
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/imrcht/bed-n-breakfast/internals/models"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func (m *postgressDBRepo) AllUsers() bool {
@@ -128,6 +130,7 @@ func (m *postgressDBRepo) SearchAvailabilityForAllRoomsByDates(start_date, end_d
 	return availableRooms, nil
 }
 
+// * SearchAvailabilityForAllRoomsByDates: returns a slice of available rooms, if any, for a given date range
 func (m *postgressDBRepo) GetRoomById(id int) (models.Room, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -143,4 +146,84 @@ func (m *postgressDBRepo) GetRoomById(id int) (models.Room, error) {
 	}
 
 	return room, nil
+}
+
+// * GetUserByEmail: returns a user by email
+func (m *postgressDBRepo) GetUserById(id int) (models.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var user models.User
+
+	query := `select id, first_name, last_name, email, password, access_level, created_at, updated_at from users where id = $1`
+	err := m.DB.QueryRowContext(ctx, query, id).Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.AccessLevel, &user.CreatedAt, &user.UpdatedAt)
+
+	if err != nil {
+		m.App.ErrorLog.Println(err)
+		return user, err
+	}
+
+	return user, nil
+}
+
+// * UpdateUser: updates a user in the database
+func (m *postgressDBRepo) UpdateUser(user models.User) error {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `update users set first_name = $1, last_name = $2, email = $3, access_level = $4, updated_at = $5 where id = $6`
+	_, err := m.DB.ExecContext(ctx, query, user.FirstName, user.LastName, user.Email, user.AccessLevel, time.Now(), user.ID)
+
+	if err != nil {
+		m.App.ErrorLog.Println(err)
+		return err
+	}
+
+	return nil
+}
+
+// * Authenticate: returns user id and hashed password if email and password are correct
+func (m *postgressDBRepo) Authenticate(email, testPassword string) (models.User, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var user models.User
+	var hashedPassword string
+
+	query := `select id, first_name, last_name, email, access_level, password from users where email = $1`
+	err := m.DB.QueryRowContext(ctx, query, email).Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.AccessLevel, &hashedPassword)
+
+	if err != nil {
+		return user, "", err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(testPassword))
+	if err == bcrypt.ErrMismatchedHashAndPassword {
+		return user, "", errors.New("incorrect password")
+	} else if err != nil {
+		return user, "", err
+	}
+
+	return user, hashedPassword, nil
+}
+
+// * InsertUser: inserts a user into the database
+func (m *postgressDBRepo) InsertUser(user models.User) (models.User, error) {
+	// * Context is used to set a timeout for the query to maintain the transaction atomicity
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	// * `returning id` is used to return the id of the inserted row and this makes the `insert statement` a `query`
+	query := `insert into users (first_name, last_name, email, password, access_level, created_at, updated_at) 
+	values ($1, $2, $3, $4, $5, $6, $7) returning id`
+
+	err := m.DB.QueryRowContext(ctx, query, user.FirstName, user.LastName, user.Email, user.Password, user.AccessLevel, time.Now(), time.Now()).Scan(&user.ID)
+
+	if err != nil {
+		m.App.ErrorLog.Println(err)
+		return models.User{}, err
+	}
+
+	return user, nil
 }

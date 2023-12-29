@@ -25,6 +25,9 @@ func defaultTempData(td *models.TemplateData, r *http.Request) *models.TemplateD
 	td.Error = App.Session.PopString(r.Context(), "error")
 	td.Warning = App.Session.PopString(r.Context(), "warning")
 	td.CSRFToken = nosurf.Token(r)
+	td.IsAuthenticated = helpers.IsAuthenticated(r)
+	td.UserAccessLevel = helpers.UserAccessLevel(r)
+
 	return td
 }
 
